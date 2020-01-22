@@ -6,17 +6,18 @@ import hvac
 import sys
 import yaml
 
-VAULT_KV_MOUNT = 'kv'
-
 update = False
+vault_kv_mount = 'kv'
 consul_to_create_or_update = {}
 vault_to_create_or_update = {}
 
 parser = argparse.ArgumentParser(description='Import Consul & Vault keys from YAML file')
 parser.add_argument('--filename', action='append', help='YAML file to load')
 parser.add_argument('--update', dest='update', action='store_true', help='Update key needed')
+parser.add_argument('--vault-kv-mount', default='kv', help='Vault KV mount path')
 
 args = parser.parse_args()
+vault_kv_mount = args.vault_kv_mount
 
 c = consul.Consul()
 h = hvac.Client()
@@ -29,7 +30,7 @@ def load_yaml(filename):
     vault_to_create_or_update = {}
 
     print('Check Consul keys:')
-    for k, v in data.get(VAULT_KV_MOUNT, {}).items():
+    for k, v in data.get(vault_kv_mount, {}).items():
         current_raw_value = c.kv.get(k)
         if current_raw_value[1] is None:
             current_value = None
@@ -47,7 +48,7 @@ def load_yaml(filename):
     for k, v in data.get('vault', {}).items():
         try:
             current_raw_value = h.secrets.kv.v1.read_secret(
-                mount_point=VAULT_KV_MOUNT,
+                mount_point=vault_kv_mount,
                 path=k,
             )
             current_value = current_raw_value['data']
@@ -80,7 +81,7 @@ if args.update:
     for k, v in vault_to_create_or_update.items():
         print('{}: {}'.format(k, v))
         h.secrets.kv.v1.create_or_update_secret(
-            mount_point=VAULT_KV_MOUNT,
+            mount_point=vault_kv_mount,
             path=k,
             secret=v,
         )
