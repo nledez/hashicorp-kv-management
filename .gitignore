@@ -1,1 +1,3 @@
 .venv/
+.make.local.sh
+/*.yml
