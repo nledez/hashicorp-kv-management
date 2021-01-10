@@ -29,7 +29,10 @@ def get_keys_to_load(filename):
     stream = open(filename, 'r')
     data = yaml.load(stream, Loader=yaml.BaseLoader)
 
-    return data['kv']
+    if data:
+        return data.get('kv', {})
+    else:
+        return {}
 
 
 def get_consul_keys(consul_keys):
